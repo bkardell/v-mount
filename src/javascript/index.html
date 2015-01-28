@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Webreflection polyfill of custom elements API -->
+    <script src="custom-elements.js"></script>
+    <script type="text/javascript" src="vmount.js"></script>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css">
+
+    <style>
+      body { padding: 1em; }
+      h1 { color: blue; }
+      .secret { color: red; }
+      #tests {
+        border-collapse: collapse;
+      }
+      #tests tr {
+        border: 1px solid black;
+      }
+      #tests td {
+        padding: 0.25em;
+      }
+
+      #tests td:nth-child(2) {
+        border-left: 2px solid gray;
+        width: 25%;
+      }
+      pre {
+        border: 1px solid gray;
+        padding: 1em;
+        background-color: #fcfcfc;
+      }
+
+      .pass { background-color: #55FF55; }
+      .fail { background-color: #FF5555; }
+    </style>
+  </head>
+  <body>
+    <section>
+      <h1>MountNode</h1>
+      <p>This is 'as I think it through' documentation and working samples of an experiment to achieve 'enough' of something like the aspects of
+      ShadowDOM that I need with tech available today.  A new kind of element I'm calling a <code>MountNode</code> because I think it's
+      important to not get it confused with ShadowDOM and to keep it forward compatbile if I actually use it in production - nevertheless there
+      are undoubtedly parallels.   Basic idea:
+        <ul>
+          <li>You can add a mount nodeto any element by saying <code>MountNode._connect(myElement)</code>.</li>
+          <li>A mount nodedoes not appear in the <code>.children</code>/<code>.childNodes</code> collections or related first/last references of the element which is said to be 'hosting' it (they are filtered).</li>
+          <li>The mount shows in the DOM tree explorer as <code>v-mount</code></li>
+          <li>You can access mounts themselves with qsa or via the <code>._hosted</code> property (myElementThatsBeenConnected._hosted)</li>
+          <li>The <code>v-mount</code> reports the <code>.parentElement</code> property as <code>null</code></li>
+          <li><code>querySelector</code> and <code>querySelectorAll</code> queries outside the mount do not return things inside the mount and vice versa</li>
+          <li>All siblings of <code>v-mount</code> are <code>style="display: none"</code></li>
+          <li>The <code>mountElement</code> provides methods for 'projecting' content from the outside tree, mutation observers reflect changes INTO the projections (if you want to reflect back out, that's something you have to manage explicitly):
+            <ul>
+              <li><code>mountElement._projectContent(sourceElement, destinationElement, optionalFilter)</code> - Copies the entire contents of sourceElement into destinationElement (replacing content).  If provided the optional filter is passed the html source before it is set and may modify before returning.</li>
+              <li><code>mountElement._projectClone(sourceElement, destinationElement, optionalFilter)</code> - Copies the entire sourceElement into destinationElement (replacing content). If provided the optional filter is passed the element clone before it is set and may modify before returning.</li>
+              <li><code>mountElement._projectAttribute(sourceElement, sourceAttr, destinationElement, destinationAttrOrFilter, optionalFilter)</code> - Copies value of the sourceAttr from sourceElement and then, chooses what to do:  If no destinationAttr is provided it is copied as content into the destinationElement.  If a destinationAttr is provided then its value is set.  If provided the optional filter is passed the value before it is set and may modify before returning.</li>
+            </ul>
+          </li>
+
+        </ul>
+      </p>
+    </section>
+    <section>
+
+      <x-foo style="border: 3px solid green;">
+        <x-foo-title subtitle="A true story">Once upon a time</x-foo-title>
+        <div>This is some test content</div>
+      </x-foo>
+
+      <h1>Tests for <code>&lt;v-mount&gt;</code></h1>
+      <p>
+      The above element with green border is an example of a custom element using a mount... in the source it looks like this:
+<code><pre>&lt;x-foo style="border: 3px solid green;"&gt;<br>
+&nbsp;&nbsp;&lt;x-foo-title&gt;Once upon a time subtitle="A true story"&lt;/x-foo-title&gt;<br>
+&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
+&lt;/x-foo&gt;</pre></code>
+      <p>
+      <p>Once created the DOM looks like this:
+<code><pre>
+&lt;x-foo style="border: 3px solid green; display: block;"&gt;<br>
+&nbsp;&nbsp;&lt;x-foo-title subtitle="A true story" projects-tocontent="-cn-4" projects="" projects-attribute-subtitle-tocontent="-cn-10" style="display: none;"&gt;Once upon a time&lt;/x-foo-title&gt;<br>
+&nbsp;&nbsp;&lt;div style="display: none;" projects-clone="-cn-7"&gt;This is some test content&lt;/div&gt;<br>
+&nbsp;&nbsp;&lt;v-mount id="-cn-1"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;section&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1 style="color: blue;border-bottom: solid 1px black;" id="-cn-4"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt;Once upon a time&lt;/span&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt; (A true story)&lt;/span&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/h1&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div style="background-color:#afafaf;" id="-cn-7"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/section&gt;<br>
+&nbsp;&nbsp;&lt;/v-mount&gt;<br>
+&lt;/x-foo&gt;</pre></code>
+      </p>
+      <div>This should be red, ignore it:<div class="secret">Foo</div></div>
+    </section>
+
+  <table id="tests">
+    <tbody>
+      <tr>
+        <td>document.querySelector("h1").innerHTML ===  "MountNode"</td>
+        <td>Document is a special kind of element, make sure that works...</td>
+      </tr>
+      <tr>
+        <td>document.querySelectorAll("h1").length === 2</td>
+        <td>And that it doesn't find ones in mount.</td>
+      </tr>
+      <tr>
+        <td>document.body.querySelector("h1").innerHTML ===  "MountNode"</td>
+        <td>Other elements should work too...</td>
+      </tr>
+      <tr>
+        <td>document.body.querySelectorAll("h1").length === 2</td>
+        <td>And those shouldn't find ones inside the mount either...</td>
+      </tr>
+      <tr>
+        <td>document.body.querySelector("v-mount").querySelectorAll("h1").length === 1</td>
+        <td>And queries inside the mount shouldn't find ones outside the mount either... <em>Note that is does find 'projected' elements though, I'm calling this a win because it's much easier to make sure you are only dealing with your own content than the other way round or bi-directionally.</em></td>
+      </tr>
+      <tr>
+        <td>document.querySelector("x-foo").children.length===2</td>
+        <td>x-foo doesn't report the mount in children, tree-walking down should stop...</td>
+      </tr>
+      <tr>
+        <td>document.querySelector("x-foo")._hosted</td>
+        <td>x-foo doesn't has a _hosted property</td>
+      </tr>
+      <tr>
+        <td>document.querySelector("v-mount")</td>
+        <td>You can query for mounts though....</td>
+      </tr>
+      <tr>
+        <td>document.querySelector("x-foo")._hosted === document.querySelector("v-mount")</td>
+        <td>._hosted <em>is</em> the mount</td>
+      </tr>
+      <tr>
+        <td>document.querySelector("x-foo")._hosted.querySelector("h1")</td>
+        <td>Searches inside of ._hosted should only find ones inside the mount</td>
+      </tr>
+      <tr>
+        <td>document.querySelector("x-foo")._hosted.parentElement === null</td>
+        <td>the _hosted connection is not linked through parentElement, tree-walking up should stop.</td>
+      </tr>
+      <tr>
+        <td>document.querySelector("x-foo")._hosted._hostElement === document.querySelector("x-foo")</td>
+        <td>the _hosted connection is upwardly linked through _hostElement</td>
+      </tr>
+    </tbody>
+  </table>
+
+  </section>
+
+  <script>
+    var test, result, testsEl = document.getElementById("tests");
+    for (var row=0; row<tests.tBodies[0].children.length; row++) {
+      result = false;
+      test = tests.tBodies[0].children[row].children[0].innerHTML.replace("&lt;", "<").replace("&gt;", ">");
+      result = eval("try{" + test +";} catch(e){ console.error('I have no idea...', e.stack); }");
+      tests.tBodies[0].children[row].className = (result) ? "pass" : "fail";
+    }
+  </script>
+  <body>
+</html>
