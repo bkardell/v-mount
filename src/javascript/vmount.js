@@ -106,9 +106,6 @@
     Object.defineProperty(HTMLDocument.prototype, "querySelector", proxyMethods.querySelector);
     Object.defineProperty(HTMLDocument.prototype, "getElementById", proxyMethods.getElementById);
 
-    /* inject the rule to hide siblings... */
-    //var siblingsRuleElement =
-    //document.head.appendChild()
 
     V_MountNode = window.V_MountNode = Object.create(HTMLElement.prototype, {
         _projectAttribute: {
@@ -169,11 +166,13 @@
         },
         _connect: {
             value: function (host) {
+                var temp, barrier, self, specifierSelector;
                 if (!host._mount) {
-                    var barrier = document.createElement("v-mount"), specifierSelector;
-                    var self = {
+                    barrier = document.createElement("v-mount");
+                    self = {
                         _children: host.children,
-                        _childNodes: host.childNodes
+                        _childNodes: host.childNodes,
+                        cssInitialized: {}
                     };
                     /*
                     so what we'd need to do is create a new child
@@ -194,8 +193,19 @@
                     host._mount.id = nextUid();
                     host._mount._hostElement = host;
                     specifierSelector = "#" +host._mount.id + ":not(#-s-boost):not(#-s-boost) ";
-                    // TODO:  This should be two step, first only needs included once, next once per custom element defn
-                    host._mount.innerHTML = "<style>" + (resets + "\n" + host._styleTemplate).replace(/`|\/--mount\//g, specifierSelector) + "</style>";
+                    //TODO: refactor to a method...
+                    if (!self.cssInitialized.root) {
+                        temp = document.createElement("style");
+                        temp.innerHTML = resets.replace(/`|\/--mount\//g, specifierSelector);
+                        document.head.appendChild(temp);
+                        self.cssInitialized.root = true;
+                    }
+                    if (!self.cssInitialized[host.tagName]) {
+                        temp = document.createElement("style");
+                        temp.innerHTML = host._styleTemplate.replace(/`|\/--mount\//g, specifierSelector);
+                        document.head.appendChild(temp);
+                        self.cssInitialized[host.tagName] = true;
+                    }
                     Object.defineProperties(host, {
                         "children": {
                             get: function () {
