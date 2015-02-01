@@ -21,7 +21,7 @@
             1. You can't create a node list, so NodeList methods return an array
 
     */
-    var resets ="/*! normalize.css v3.0.2 | MIT License | git.io/normalize */`article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}`audio,canvas,progress,video{display:inline-block;vertical-align:baseline}`audio:not([controls]){display:none;height:0}`[hidden],template{display:none}`a{background-color:transparent}`a:active,a:hover{outline:0}`abbr[title]{border-bottom:1px dotted}`b,strong{font-weight:700}`dfn{font-style:italic}`h1{font-size:2em;margin:.67em 0}`mark{background:#ff0;color:#000}`small{font-size:80%}`sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}`sup{top:-.5em}`sub{bottom:-.25em}`img{border:0}`svg:not(:root){overflow:hidden}`figure{margin:1em 40px}`hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}`pre{overflow:auto}`code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}`button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}`button{overflow:visible}`button,select{text-transform:none}`button,html input[type=button],input[type=reset],input[type=submit]{-webkit-appearance:button;cursor:pointer}`button[disabled],html input[disabled]{cursor:default}`button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}`input{line-height:normal}`input[type=checkbox],input[type=radio]{box-sizing:border-box;padding:0}`input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{height:auto}`input[type=search]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}`input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-search-decoration{-webkit-appearance:none}`fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}`legend{border:0;padding:0}`textarea{overflow:auto}`optgroup{font-weight:700}`table{border-collapse:collapse;border-spacing:0}`td,th{padding:0}`",
+    var resets =".v-mount-host>*:not(v-mount){display: none !important;}}/*! normalize.css v3.0.2 | MIT License | git.io/normalize */`article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}`audio,canvas,progress,video{display:inline-block;vertical-align:baseline}`audio:not([controls]){display:none;height:0}`[hidden],template{display:none}`a{background-color:transparent}`a:active,a:hover{outline:0}`abbr[title]{border-bottom:1px dotted}`b,strong{font-weight:700}`dfn{font-style:italic}`h1{font-size:2em;margin:.67em 0}`mark{background:#ff0;color:#000}`small{font-size:80%}`sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}`sup{top:-.5em}`sub{bottom:-.25em}`img{border:0}`svg:not(:root){overflow:hidden}`figure{margin:1em 40px}`hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}`pre{overflow:auto}`code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}`button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}`button{overflow:visible}`button,select{text-transform:none}`button,html input[type=button],input[type=reset],input[type=submit]{-webkit-appearance:button;cursor:pointer}`button[disabled],html input[disabled]{cursor:default}`button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}`input{line-height:normal}`input[type=checkbox],input[type=radio]{box-sizing:border-box;padding:0}`input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{height:auto}`input[type=search]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}`input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-search-decoration{-webkit-appearance:none}`fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}`legend{border:0;padding:0}`textarea{overflow:auto}`optgroup{font-weight:700}`table{border-collapse:collapse;border-spacing:0}`td,th{padding:0}",
         lastUid = 0,
         nextUid = function() {
             return "-cn-" + (++lastUid);
@@ -52,11 +52,16 @@
             return result;
         },
         qsa = function(scope, query) {
-            var full = Array.prototype.slice.call(findAll(scope, query));
-            var inside = Array.prototype.slice.call(findAll(scope, "v-mount " + query));
-            return full.filter(function(item) {
-                return inside.indexOf(item) === -1;
-            });
+            var full, inside;
+            if (query.indexOf("/--mount/") !== -1) {
+                return scope._querySelectorAll(query.replace(/\/--mount\//g, "v-mount"));
+            } else {
+                full = Array.prototype.slice.call(findAll(scope, query));
+                inside = Array.prototype.slice.call(findAll(scope, "v-mount " + query + ",v-mount"));
+                return full.filter(function(item) {
+                    return inside.indexOf(item) === -1;
+                });
+            }
         },
         filterConnectors = function(coll) {
             var ret = Array.prototype.slice.call(coll).filter(function(el) {
@@ -87,6 +92,11 @@
                 var coll = this.querySelectorAll(query);
                 return (coll.length > 0) ? coll[0] : null;
             }
+        },
+        "getElementById": {
+            value: function(id) {
+                return this.querySelector("#" + id.replace("`", "`#"));
+            }
         }
     };
 
@@ -94,6 +104,11 @@
     Object.defineProperty(HTMLElement.prototype, "querySelector", proxyMethods.querySelector);
     Object.defineProperty(HTMLDocument.prototype, "querySelectorAll", proxyMethods.querySelectorAll);
     Object.defineProperty(HTMLDocument.prototype, "querySelector", proxyMethods.querySelector);
+    Object.defineProperty(HTMLDocument.prototype, "getElementById", proxyMethods.getElementById);
+
+    /* inject the rule to hide siblings... */
+    //var siblingsRuleElement =
+    //document.head.appendChild()
 
     V_MountNode = window.V_MountNode = Object.create(HTMLElement.prototype, {
         _projectAttribute: {
@@ -154,8 +169,8 @@
         },
         _connect: {
             value: function (host) {
-                if (!host._hosted) {
-                    var barrier = document.createElement("v-mount");
+                if (!host._mount) {
+                    var barrier = document.createElement("v-mount"), specifierSelector;
                     var self = {
                         _children: host.children,
                         _childNodes: host.childNodes
@@ -173,11 +188,14 @@
                     host._projectElementClone = this._projectElementClone;
                     host._projectAttribute = this._projectAttribute;
 
-                    host.appendChild(barrier);
-                    host._hosted = barrier;
-                    host._hosted.id = nextUid();
-                    host._hosted._hostElement = host;
-                    host._hosted.innerHTML = "<style>" + resets.replace(/`/g, "#" + host._hosted.id + " ") + " #" + host._hosted.id + " .secret {color: orange;}</style>";
+                    host.classList.add("v-mount-host");
+                    host.insertBefore(barrier, host.firstElementChild);
+                    host._mount = barrier;
+                    host._mount.id = nextUid();
+                    host._mount._hostElement = host;
+                    specifierSelector = "#" +host._mount.id + ":not(#-s-boost):not(#-s-boost) ";
+                    // TODO:  This should be two step, first only needs included once, next once per custom element defn
+                    host._mount.innerHTML = "<style>" + (resets + "\n" + host._styleTemplate).replace(/`|\/--mount\//g, specifierSelector) + "</style>";
                     Object.defineProperties(host, {
                         "children": {
                             get: function () {
@@ -210,15 +228,17 @@
                             }
                         }
                     });
+
+/*
                     for (var i = 0; i < host.children.length; i++) {
                         // todo: mount them into reflected and observe
                         //var clone = host.children[i].cloneNode(true);
                         //clone.setAttribute("projected", true);
-                        //host._hosted.appendChild(clone);
+                        //host._mount.appendChild(clone);
 
                         host.children[i].style.display = "none";
                     }
-
+*/
                     if (!host.observer) {
                         host.observer = new MutationObserver(function (mutations) {
                             // we'll just re-project blindly, this is heavy...
@@ -232,13 +252,13 @@
                                     for (var i=0; i<target.attributes.length; i++) {
                                         attr = target.attributes[i];
                                         if (attr.name === "projects-clone") {
-                                            proxyTarget = host._hosted.querySelector("#" + attr.value);
+                                            proxyTarget = host._mount.querySelector("#" + attr.value);
                                             console.log("clone");
                                         } else if (attr.name === "projects-tocontent") {
-                                            proxyTarget = host._hosted.querySelector("#" + attr.value);
+                                            proxyTarget = host._mount.querySelector("#" + attr.value);
                                             host._projectElementContent(target, proxyTarget);
                                         } else  if (attr.name.indexOf("projects-attribute") === 0 && record.oldValue !== attr.value) {
-                                            proxyTarget = host._hosted.querySelector("#" + attr.value);
+                                            proxyTarget = host._mount.querySelector("#" + attr.value);
                                             srcAttrName = attr.name.replace("projects-attribute-", "");
                                             if (attr.name.indexOf("-tocontent") !== -1) {
                                                 host._projectAttribute(target, srcAttrName.replace("-tocontent",""), proxyTarget);
@@ -287,20 +307,66 @@
     document.registerElement(
         "x-foo", {
             "prototype": Object.create(HTMLElement.prototype, {
+                _sourceTemplate: { value: "<h1><span id=\"my-title\"></span><span></span></h1><div style=\"background-color:#afafaf;\"></div>" },
+                _styleTemplate: {  value: "/--mount/ h1 { color: rebeccapurple;border-bottom: solid 1px black; }" },
                 createdCallback: {
                     value: function() {
                         this.style.display = "block";
                         V_MountNode._connect(this);
                         var wrapper = document.createElement("section");
                         // now I want to
-                        wrapper.innerHTML = "<h1 style=\"color: blue;border-bottom: solid 1px black;\"><span></span><span></span></h1><div style=\"background-color:#afafaf;\"></div>";
-                        var hosted = this._hosted;
+                        wrapper.innerHTML = this._sourceTemplate;
+                        var hosted = this._mount;
                         hosted.appendChild(wrapper);
                         this._projectElementContent(this.querySelector("x-foo-title"), wrapper.firstChild.firstChild);
                         this._projectElementClone(this.querySelector(":not(x-foo-title)"), wrapper.children[1]);
                         this._projectAttribute(this.querySelector("x-foo-title"), "subtitle", wrapper.firstChild.children[1], function (val) {
                             return (val) ? " (" + val + ")" : "";
                         });
+                    }
+                }
+            })
+        }
+    );
+
+
+    document.registerElement(
+        "x-checkbox", {
+            "prototype": Object.create(HTMLElement.prototype, {
+                _sourceTemplate: { value: "" },
+                _styleTemplate: {  value: "/--mount/ input[type=checkbox]{position: absolute; left: -1000px;} /--mount/ label::before { content: \"\\2000\"; width: 2em; height: 2em; border: 5px solid gray; display: inline-block; text-align: center; border-radius: 4em; } /--mount/ input[type=checkbox]:checked ~ label::before { background-color: green; } /--mount/ input[type=checkbox]:checked ~ label::before { content: \"\\2713\"; color: white; border-color: black; } " },
+                createdCallback: {
+                    value: function() {
+                        var projectableTargetElement, internalCheckbox, authorCheckbox = this.querySelector("input[type=\"checkbox\"]"), label;
+                        this.style.display = "inline";
+                        V_MountNode._connect(this);
+
+                        // create an element that we can project into...
+                        projectableTargetElement = document.createElement("span");
+
+                        // append it to the mount...
+                        this._mount.appendChild(projectableTargetElement);
+
+                        // project a clone into it...
+                        this._projectElementClone(authorCheckbox, projectableTargetElement);
+
+                        // grab a reference to it...
+                        internalCheckbox = this._mount.querySelector("input[type=\"checkbox\"]");
+
+                        // create or use it's id
+                        internalCheckbox.id = internalCheckbox.id || nextUid();
+
+                        // create a label for use inside the mount
+                        label = document.createElement("label");
+
+                        // connect it
+                        label.setAttribute("for", internalCheckbox.id);
+
+                        // place it after
+                        projectableTargetElement.appendChild(label);
+
+                        // remove the original's name attribute so it won't submit
+                        authorCheckbox.removeAttribute("name");
                     }
                 }
             })
