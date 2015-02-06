@@ -202,7 +202,7 @@
                     }
                     if (!self.cssInitialized[host.tagName]) {
                         temp = document.createElement("style");
-                        temp.innerHTML = host._styleTemplate.replace(/`|\/--mount\//g, specifierSelector);
+                        temp.innerHTML = (host._styleTemplate || "").replace(/`|\/--mount\//g, specifierSelector);
                         document.head.appendChild(temp);
                         self.cssInitialized[host.tagName] = true;
                     }
@@ -339,6 +339,27 @@
         }
     );
 
+    document.registerElement(
+        "v-host", {
+            "prototype": Object.create(HTMLElement.prototype, {
+                createdCallback: {
+                    value: function() {
+                        var children = Array.prototype.slice.call(this.children);
+
+                        V_MountNode._connect(this);
+
+                        // create an element that we can project into...
+                       // projectableTargetElement = document.createElement("span");
+
+                        // append it to the mount...
+                        children.forEach(function (child) {
+                            this._mount.appendChild(child);
+                        }, this);
+                    }
+                }
+            })
+        }
+    );
 
     document.registerElement(
         "x-checkbox", {
