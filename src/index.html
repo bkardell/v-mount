@@ -2,17 +2,14 @@
 <html>
   <head>
     <!-- Webreflection polyfill of custom elements API -->
-    <script src="javascript/custom-elements.js"></script>
-    <script type="text/javascript" src="javascript/vmount.js"></script>
+    <script src="custom-elements.js"></script>
+    <script type="text/javascript" src="vmount.js"></script>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css">
 
     <style>
       body { padding: 1em; }
       h1 { color: blue; }
-      pre br {
-        display: none; /* don't ask, I have a funky server... */
-      }
       .secret { color: red; }
       #tests {
         border-collapse: collapse;
@@ -108,7 +105,7 @@
 &nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
 &lt;/x-foo&gt;</pre></code>
       <p>
-      <p>Once created the DOM looks like this (and follows the rules specified above, so v-mount isn't exactly an element):
+      <p>Once created the DOM looks like this:
 <code><pre>
 &lt;x-foo style="border: 3px solid green; display: block;"&gt;<br>
 &nbsp;&nbsp;&lt;x-foo-title subtitle="A true story" projects-tocontent="-cn-4" projects="" projects-attribute-subtitle-tocontent="-cn-10" style="display: none;"&gt;Once upon a time&lt;/x-foo-title&gt;<br>
@@ -127,7 +124,6 @@
 &lt;/x-foo&gt;</pre></code>
       </p>
     </section>
-
     <hr>
     <section id="mylittlefriend">
       <h1>Sample 2</h1>
@@ -151,7 +147,42 @@
       elements and CSS which actually do the work.
       </p>
     </section>
-
+    <section>
+      <h1>Sample 3</h1>
+      <p>Ok, but some people say "why can't I express that in HTML... why can't I say `there's a boundary here`?"  Well, with a custom element you could, for example:</p>
+      <v-host>
+        <div>
+          <h1>HELLO! THIS SHOULD BE IN A MOUNT NODE!</h1>
+          <div>This is some test content</div>
+        </div>
+      </v-host>
+      <p>
+      The above element with green border is an example of a custom element <code>v-host</code> which simply creates a mount and moves all of the children inside of it!... in the source it looks like this:
+<code><pre>&lt;x-host&gt;<br>
+&nbsp;&nbsp;&lt;h1&gt;HELLO! THIS SHOULD BE IN A MOUNT NODE!&lt;/h1&gt;<br>
+&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
+&lt;/v-host&gt;</pre></code>
+      <p>
+      <p>Once created the DOM looks like this:
+<code><pre>
+&lt;x-foo style="border: 3px solid green; display: block;"&gt;<br>
+&nbsp;&nbsp;&lt;x-host projects-tocontent="-cn-4" projects="" projects-attribute-subtitle-tocontent="-cn-10" style="display: none;"&gt;Once upon a time&lt;/x-foo-title&gt;<br>
+&nbsp;&nbsp;&lt;div style="display: none;" projects-clone="-cn-7"&gt;This is some test content&lt;/div&gt;<br>
+&nbsp;&nbsp;&lt;v-mount id="-cn-1"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;section&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1 style="color: blue;border-bottom: solid 1px black;" id="-cn-4"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt;Once upon a time&lt;/span&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt; (A true story)&lt;/span&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/h1&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div style="background-color:#afafaf;" id="-cn-7"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/section&gt;<br>
+&nbsp;&nbsp;&lt;/v-mount&gt;<br>
+&lt;/x-foo&gt;</pre></code>
+      </p>
+    </section>
+    <hr>
   <h1>Tests for <code>&lt;v-mount&gt;</code></h1>
   <table id="tests">
     <tbody>
@@ -160,7 +191,7 @@
         <td>Document is a special kind of element, make sure that works...</td>
       </tr>
       <tr>
-        <td>document.querySelectorAll("h1").length === 4</td>
+        <td>document.querySelectorAll("h1").length === 5</td>
         <td>And that it doesn't find ones in mount.</td>
       </tr>
       <tr>
@@ -168,7 +199,7 @@
         <td>Other elements should work too...</td>
       </tr>
       <tr>
-        <td>document.body.querySelectorAll("h1").length === 4</td>
+        <td>document.body.querySelectorAll("h1").length === 5</td>
         <td>And those shouldn't find ones inside the mount either...</td>
       </tr>
       <tr>
@@ -188,7 +219,7 @@
         <td>We should find none of these....</td>
       </tr>
       <tr>
-        <td>document.body.querySelectorAll("/--mount/").length === 2</td>
+        <td>document.body.querySelectorAll("/--mount/").length === 3</td>
         <td>We should find them with the combinator though...</td>
       </tr>
       <tr>
