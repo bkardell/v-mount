@@ -158,28 +158,12 @@
       </v-host>
       <p>
       The above element with green border is an example of a custom element <code>v-host</code> which simply creates a mount and moves all of the children inside of it!... in the source it looks like this:
-<code><pre>&lt;x-host&gt;<br>
-&nbsp;&nbsp;&lt;h1&gt;HELLO! THIS SHOULD BE IN A MOUNT NODE!&lt;/h1&gt;<br>
-&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
-&lt;/v-host&gt;</pre></code>
-      <p>
-      <p>Once created the DOM looks like this:
-<code><pre>
-&lt;x-foo style="border: 3px solid green; display: block;"&gt;<br>
-&nbsp;&nbsp;&lt;x-host projects-tocontent="-cn-4" projects="" projects-attribute-subtitle-tocontent="-cn-10" style="display: none;"&gt;Once upon a time&lt;/x-foo-title&gt;<br>
-&nbsp;&nbsp;&lt;div style="display: none;" projects-clone="-cn-7"&gt;This is some test content&lt;/div&gt;<br>
-&nbsp;&nbsp;&lt;v-mount id="-cn-1"&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;section&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1 style="color: blue;border-bottom: solid 1px black;" id="-cn-4"&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt;Once upon a time&lt;/span&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt; (A true story)&lt;/span&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/h1&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div style="background-color:#afafaf;" id="-cn-7"&gt;<br>
+<code><pre>&lt;v-host class="v-mount-host"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;v-mount id="-cn-9"&gt;&lt;div&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;HELLO! THIS SHOULD BE IN A MOUNT NODE!&lt;/h1&gt;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;/section&gt;<br>
-&nbsp;&nbsp;&lt;/v-mount&gt;<br>
-&lt;/x-foo&gt;</pre></code>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/v-mount&gt;<br>
+&lt;/v-host&gt;</pre></code>
       </p>
     </section>
     <hr>
