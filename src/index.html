@@ -39,6 +39,10 @@
         font-family: fantasy;
         font-style: italic;
       }
+
+      .checkmark {
+        color: green;
+      }
     </style>
   </head>
   <body>
@@ -53,19 +57,19 @@
 
       <blockquote>Can we create something in such a way that DOM methods outside that element would answer questions, by default, ignoring the stuff inside, and vice-versa?</blockquote>
 
-      <p>The answer seems to be "kinda, yeah". While we reate something that isn't an element as far as the browser's internals are concerned, we definitely can lay atop that and have the interface a developer can use just override, lie about itself and act differently.  So let's start there and see how we might define a magical new <code>Mount_Node</code> (note that I'm underscoring the name for forward compatibility - this is experimental). What would we need?
+      <p>The answer seems to be "kinda, yeah". While we can't create something that isn't an element as far as the browser's internals are concerned, we definitely can lay atop that and have the interface a developer can use just override, lie about itself and act differently.  So let's start there and see how we might define a magical new <code>Mount_Node</code> (note that I'm underscoring the name for forward compatibility - this is experimental). What would we need?
       </p>
 
-      <h3>It should only be creatable imperatively</h3>
+      <h3><span class="checkmark">&#10003;</span> It should only be creatable imperatively</h3>
       <p>If it isn't an element we don't want it to pretend to be just like everything else, so it can't come down in your HTML (if you're thinking "too bad, that could be handy" just wait, we'll get there).  So, would it be possible to create such a thing?  Could we use the internals of custom elements to create an element which can only be created imperatively?  Not exactly, but pretty close actually.  We can create a static method which allows you to connect a new <code>Mount_Node</code> to a host and, once created, signs it with a secret.  When the element is created, it sets a timeout and on the next tick if it doesn't see the secret there it self-destructs.</p>
 
-      <h3>querySelector and friends</h3>
+      <h3><span class="checkmark">&#10003;</span> querySelector and friends should be scoped</h3>
       <p>At the most basic level this is pretty easy to do too- you basically wrap the method, do the native thing and then filter depending on whether you are inside a <code>Mount_Node</code> or outside, the other results.  You can do the same with getElementById - it's a bit of a performance hit, but in reality, according to the spec, this is how it really works anyway.  For other things, you can pretty much do the same.</p>
 
-      <h3>parent and child</h3>
+      <h3><span class="checkmark">&#10003;</span> parent and child links should disconnect</h3>
       <p>Once again, we can simply overwrite - so that a <code>Mount_Node</code>'s parentElement returns null acreate a new property <code>_host</code> (what would have been parentElement) instead.  Likewise, we can hide the <code>host</code>'s native children property and replace it with one that is filtered to exclude the <code>Mount_Node</code> and provide a new <code>._mount</code> property which points to the <code>Mount_Node</code>.</p>
 
-      <h3>children and mount rendering</h3>
+      <h3><span class="checkmark">&#10003;</span> Only the mount should render</h3>
       <p>This is shaping up nicely except that the browser can't render <em>both</em> children <em>and</em> a mount inside a host.  If something becomes a host you want it to <em>only</em> paint the host.  Note that I say 'paint' because later I'm going to explain that we don't want to <em>destroy</em> a mounts siblings so much as <em>hide</em> them.  Welp, if we make the mount node the first actual child (keep in mind that to the browser it's still a child, you just can't see that) then CSS gives us the general sibling combinator allowing us to say "all siblings of a v-mount", so we can easily have our code inject a single rule stylesheet which does that: <code>v-mount ~ * { display: none !important; }</code>.  Awesome, now the mount is drawn and children are hidden!</p>
     </section>
 
@@ -77,11 +81,11 @@
 
       <p>The answer again seems to be "kinda, yeah".</p>
 
-      <h3>v-mount default stylesheet</h3>
+      <h3><span class="checkmark">&#10003;</span> The inside should be protected</h3>
       <p>All browsers have a default stylesheet that tells them how to display an element in the first place - the problem is the page has trumped those with lots of rules that came after or are more specific than the default.  But, if we could simply create a v-mount default stylesheet which was more specific, we'd essentially reset and achieve the same effect of not matching.  Happily, there actually kinda is a way to do this.  I say "kinda" because we don't know for sure what the specificity of rules in the outside page are, but we do know that each level of specificity increases with an order of magnitude (within an unspecified number system) - that is: a tag is like "1" - a class is an order of magnitude more specific and an id is an order of magnitude more specific than that.  We also know that people don't write a lot of rules with multiple IDs in them, so any such rule with a few (let's say 3) IDs would trump just about anything on the outside.  In other words, if we could just somehow say something like <code>#a #b #c v-node h1 {...}</code> for each default rule, you could pretty much guarantee that that would be what you'd get.  Luckily, CSS provides us with a way to fake that via <code>:not</code> and attach it right on the v-node itself.  Since we're in control of the v-node, you can pretty much guarantee that it will never be truthful in practice, but I'm going to pick an odd one <code>id="_"</code> and show you what I mean:  <code>v-node:not(#_):not(#_):not(#_) h1 {...}</code>.  So we just generate and insert (just once) a v-node default stylesheet and the v-node is protected from the outside world.  But, isn't this slow?  Wont this make matching slow?  Actually, it shouldn't be too bad - browsers use a bloom filter and such cleverness that evaluating the same triple :not's on the same element should be very low cost.</p>
 
 
-      <h3>v-mount rules</h3>
+      <h3<span class="checkmark">&#10003;</span> The inside should be stylable and the outside protected</h3>
       <p>So, now the DOM is in pretty good shape and the mount is protected from the outside world visually by default, but what about the stuff inside it.  We don't really want component authors to have to write all those :not's right?  Well, if you're using a pre-processor, that's actually not too hard, so what I'm going to cheat a little and say 'what if there was an api that did a simple pre-processor step to add it' and we just do some simple checks to make sure that you don't stick a style or link tag inside of it manually.  We might provide a simple method like <code>._scopeCSS(<em>cssText</em>)</code> which did it for you.  As long as your CSS is valid, it is pretty easy to create a frame, create a stylesheet out of your CSS, iterate the rules and copy them over with the not'ing in place.  With these in place, the outer document would be reasonably protected from the inner.</p>
     </section>
   <body>
