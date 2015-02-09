@@ -187,6 +187,18 @@
                     host._projectElementClone = this._projectElementClone;
                     host._projectAttribute = this._projectAttribute;
 
+                    Object.defineProperty(barrier, "parentElement", {
+                        get: function() {
+                            return null;
+                        }
+                    });
+                    Object.defineProperty(barrier, "parentNode", {
+                        get: function() {
+                            return null;
+                        }
+                    });
+                    barrier._connectConstructed = true;
+
                     host.classList.add("v-mount-host");
                     host.insertBefore(barrier, host.firstElementChild);
                     host._mount = barrier;
@@ -293,16 +305,12 @@
         },
         createdCallback: {
             value: function() {
-                Object.defineProperty(this, "parentElement", {
-                    get: function() {
-                        return null;
+                var self = this;
+                setTimeout(function () {
+                    if (!self._connectConstructed) {
+                        self.parentElement.removeChild(self);
                     }
-                });
-                Object.defineProperty(this, "parentNode", {
-                    get: function() {
-                        return null;
-                    }
-                });
+                }, 10);
             }
         }
     });

@@ -2,7 +2,7 @@
 <html>
   <head>
     <!-- Webreflection polyfill of custom elements API -->
-    <script src="custom-elements.js"></script>
+    <script src="javascript/custom-elements.js"></script>
     <script type="text/javascript" src="javascript/vmount.js"></script>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css">
@@ -33,210 +33,56 @@
 
       .pass { background-color: #55FF55; }
       .fail { background-color: #FF5555; }
+
+      blockquote {
+        border: none;
+        font-family: fantasy;
+        font-style: italic;
+      }
     </style>
   </head>
   <body>
-    <section>
-      <p>This is some 'as I think it through' documentation and working samples of an experiment to solve the 'friendly fire' problem in the DOM.
-      Shadow DOM would have addressed the main issues I described, but there's pretty substantial disagreement on some bits of it and it's looking like
-      we're not going to get that tool into the mainstream in the next months or maybe even few years.  This is a shame because without something more,
-      custom elements is essentially simplified "recipe" for the DOM you really want to build and the contents of author provided markup usually get destroyed
-      and treated as input to build the "real" DOM which is just hanging out in your DOM increasing the friendly fire problem and the transformation causing confusion.   More than most, I've been down this road before - I had a kind of custom element polyfill in 2007 and it got a lot of use by the people who knew about it, and this was their the single biggest complaint.  Don't get me wrong, that world is better than the world without it, but the concept of
-      custom elements essentially is all *about* things being wrapped up and reusable and that inherently creates more friendly fire.
-      </p>
-      <p>Given all of this, I've decided to look for/experiment with a temporary and maybe "good enough" or at least "better" answer using what we've actually got widely available until we get there.  Maybe this can even help inform what we need, so hey, maybe it's not a complete waste.  I see a single level of protection as valuable (that is, main document hosting components) for a vast number of use cases whether or not we solve nested levels of protection.  Here's what I've got so far...</p>
+    <section class="active">
+      <p>I recently described 'the friendly fire problem' in the DOM in a <a href="https://briankardell.wordpress.com/2015/01/14/friendly-fire-the-fog-of-dom/">blog post</a>, sometimes referred to less illustratively as 'the composition problem'.  Shadow DOM as originally spec'ed would have addressed this issue, but it's pretty complicated and now it seems as though it's hung up in committee and likely to be modified or rethought.  As disappointing as this is, on some level it's actually not at all a surprise to me - not just because I follow the lists closely but because solving problems requires experimentation and sometimes only after you've really thought it through and developed something complex to address the issues are you well situated to throw that one out, simplify it and do the real thing.  'The Pilot System' effect was described in the Mythical Man Month way back in the 1960's and is sometimes known as "The First Pancake" or "The First Waffle" theory.  It's not a bad thing. What is a bad thing is that in the meantime, developers are left with few good options and are stuck in a world in which all of those question remain unanswered.  They could use Polymer's Shadow DOM polyfill, but it's heavy and currently intertwined with other things.  It also wants to be a polyfill - that is - act like a native thing.  This worries me since it looks like that native thing will never actually exist in that form and this creates a Cobra Problem (I'll leave that for another post).  In any case, in the meantime, developers are left without many good options to solve these problems.  So, I've been wondering what we can do (anything?) and experimenting with something based on my thoughts in that post.</p>
+    </section>
 
-      <h1>MountNode</h1>
-      <p>Imagining a new kind of "thing" I'm calling a <code>MountNode</code> because I think it's important to not get it confused with ShadowDOM and to keep it forward compatbile if I actually use it in production - nevertheless there are undoubtedly parallels.   <strong>Basic idea/TD;DR:  I create a new thing called a `MountNode` which is actually an element but lies about itself to give the illusion that it is a new kind of Node that isn't "quite" an element so much as a mount point - not parent/child link between trees and subtrees.  Also experimenting with a coopertaing CSS pattern which kinda sucks but gives decent protections.</strong>
-      <h2>details...</h2>
-        <ul>
-          <li>You can create and connect a <dfn>mount node</dfn> to any element (which becomes the <dfn>host element</dfn>) by saying <code>MountNode._connect(hostElement)</code>.  The contents of a <dfn>mount node</dfn> are referred to as the <dfn>mounted subtree</dfn>.</li>
-          <li>Connecting a mount affects many DOM APIs:
-            <ul>
-              <li>How it affects normal DOM APIs:
-                <ul>
-                  <li><code>document.querySelector(...)</code> and friends do not return elements inside a <dfn>mount node</dfn> (or the <dfn>mount node</dfn> itself), only in the outer tree.  These methods allow use of the <code>/--mount/</code> combinator to select <dfn>mount nodes</dfn> themselves or its descendants, they work just like any other selector.</li>
-                  <li><code>document.getElementById(...)</code> will not return elements inside a <dfn>mount node</dfn> (or the <dfn>mount node</dfn> itself), only in the outer tree.</li>
-                </ul>
-              </li>
-              <li>How it affects the <dfn>host element</dfn>:
-                <ul>
-                  <li>A <dfn>mount node</dfn> does not appear in the <code>.children</code>/<code>.childNodes</code> collections or related first/last references of the element which is said to be its <dfn>hosting element</dfn> it (they are filtered).</li>
-                  <li>The <dfn>mount node</dfn> shows in the DOM tree explorer as <code>v-mount</code></li>
-                  <li>The <dfn>host element</dfn> provides a link to the <dfn>mount node</dfn> via the <code>._mount</code> property</li>
-                </ul>
-              </li>
-              <li>How it affects the <dfn>mounted subtree</dfn>:
-                <ul>
-                  <li>Including the definition for <code>v-mount</code> custom element injects a 'default stylesheet' which artificially boosts the specificity of its selectors by triple <code>:not(#-id)</code> checks on the matching element, as in <code>v-mount:not(#-id):not(#-id):not(#-id) h1{...}</code>- as these are same element checks, they are fairly fast and that is a <em>-very-</em> high specificity, enough to trump pretty much anything in the wild, but can be explicitly trumped in known fashion.  The default stylesheet:
-                <ul>
-                  <li>The default stylesheet is based on a specificity tweaked <a href="git.io/normalize/">git.io/normalize.css</a></li>
-                  <li>When connected a <dfn>mount node</dfn> marks its <dfn>host element</dfn> with the class <code>v-mount-host</code> which is then used to hide all children except it.</li>
-                  <li>If, during connection, a Custom Element contains a <code>._styleTemplate</code> property, that CSS may contain <code>/--mount/</code> in the selector which has the effect of replacing the specificity boost formula above.  It will be included only once regardless of how many instances are created.</li>
-                </ul>
-              </li>
-              <li>What about the <dfn>mount node</dfn> itself...
-                <ul>
-                  <li>It reports it's <code>.parentElement</code> as <code>null</code></li>
-                  <li>The <code>mountElement</code> provides methods for 'projecting' content from the outside tree, mutation observers reflect changes INTO the projections (if you want to reflect back out, that's something you have to manage explicitly):
-                    <ul>
-                      <li><code>mountElement._projectContent(sourceElement, destinationElement, optionalFilter)</code> - Copies the entire contents of sourceElement into destinationElement (replacing content).  If provided the optional filter is passed the html source before it is set and may modify before returning.</li>
-                      <li><code>mountElement._projectClone(sourceElement, destinationElement, optionalFilter)</code> - Copies the entire sourceElement into destinationElement (replacing content). If provided the optional filter is passed the element clone before it is set and may modify before returning.</li>
-                      <li><code>mountElement._projectAttribute(sourceElement, sourceAttr, destinationElement, destinationAttrOrFilter, optionalFilter)</code> - Copies value of the sourceAttr from sourceElement and then, chooses what to do:  If no destinationAttr is provided it is copied as content into the destinationElement.  If a destinationAttr is provided then its value is set.  If provided the optional filter is passed the value before it is set and may modify before returning.</li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </p>
-    </section>
     <section>
-      <h1>Sample 1</h1>
-      <x-foo style="border: 3px solid green;" id="my-x-foo">
-        <x-foo-title subtitle="A true story" id="my-title">Once upon a time</x-foo-title>
-        <div>This is some test content</div>
-      </x-foo>
+      <h2>Let's start with the basic DOM stuff</h2>
       <p>
-      The above element with green border is an example of a custom element using a mount... in the source it looks like this:
-<code><pre>&lt;x-foo style="border: 3px solid green;"&gt;<br>
-&nbsp;&nbsp;&lt;x-foo-title&gt;Once upon a time subtitle="A true story"&lt;/x-foo-title&gt;<br>
-&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
-&lt;/x-foo&gt;</pre></code>
-      <p>
-      <p>Once created the DOM looks like this:
-<code><pre>
-&lt;x-foo style="border: 3px solid green; display: block;"&gt;<br>
-&nbsp;&nbsp;&lt;x-foo-title subtitle="A true story" projects-tocontent="-cn-4" projects="" projects-attribute-subtitle-tocontent="-cn-10" style="display: none;"&gt;Once upon a time&lt;/x-foo-title&gt;<br>
-&nbsp;&nbsp;&lt;div style="display: none;" projects-clone="-cn-7"&gt;This is some test content&lt;/div&gt;<br>
-&nbsp;&nbsp;&lt;v-mount id="-cn-1"&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;section&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1 style="color: blue;border-bottom: solid 1px black;" id="-cn-4"&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt;Once upon a time&lt;/span&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;span&gt; (A true story)&lt;/span&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/h1&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div style="background-color:#afafaf;" id="-cn-7"&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/div&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;/section&gt;<br>
-&nbsp;&nbsp;&lt;/v-mount&gt;<br>
-&lt;/x-foo&gt;</pre></code>
+      Could we create some kind of new "thing" - not quite an element, which allowed us to mount a subtree to an element by a means other than parent/child links?  This is, what I argue is the lowest level of thing which would still add value.
+
+      <blockquote>Can we create something in such a way that DOM methods outside that element would answer questions, by default, ignoring the stuff inside, and vice-versa?</blockquote>
+
+      <p>The answer seems to be "kinda, yeah". While we reate something that isn't an element as far as the browser's internals are concerned, we definitely can lay atop that and have the interface a developer can use just override, lie about itself and act differently.  So let's start there and see how we might define a magical new <code>Mount_Node</code> (note that I'm underscoring the name for forward compatibility - this is experimental). What would we need?
       </p>
+
+      <h3>It should only be creatable imperatively</h3>
+      <p>If it isn't an element we don't want it to pretend to be just like everything else, so it can't come down in your HTML (if you're thinking "too bad, that could be handy" just wait, we'll get there).  So, would it be possible to create such a thing?  Could we use the internals of custom elements to create an element which can only be created imperatively?  Not exactly, but pretty close actually.  We can create a static method which allows you to connect a new <code>Mount_Node</code> to a host and, once created, signs it with a secret.  When the element is created, it sets a timeout and on the next tick if it doesn't see the secret there it self-destructs.</p>
+
+      <h3>querySelector and friends</h3>
+      <p>At the most basic level this is pretty easy to do too- you basically wrap the method, do the native thing and then filter depending on whether you are inside a <code>Mount_Node</code> or outside, the other results.  You can do the same with getElementById - it's a bit of a performance hit, but in reality, according to the spec, this is how it really works anyway.  For other things, you can pretty much do the same.</p>
+
+      <h3>parent and child</h3>
+      <p>Once again, we can simply overwrite - so that a <code>Mount_Node</code>'s parentElement returns null acreate a new property <code>_host</code> (what would have been parentElement) instead.  Likewise, we can hide the <code>host</code>'s native children property and replace it with one that is filtered to exclude the <code>Mount_Node</code> and provide a new <code>._mount</code> property which points to the <code>Mount_Node</code>.</p>
+
+      <h3>children and mount rendering</h3>
+      <p>This is shaping up nicely except that the browser can't render <em>both</em> children <em>and</em> a mount inside a host.  If something becomes a host you want it to <em>only</em> paint the host.  Note that I say 'paint' because later I'm going to explain that we don't want to <em>destroy</em> a mounts siblings so much as <em>hide</em> them.  Welp, if we make the mount node the first actual child (keep in mind that to the browser it's still a child, you just can't see that) then CSS gives us the general sibling combinator allowing us to say "all siblings of a v-mount", so we can easily have our code inject a single rule stylesheet which does that: <code>v-mount ~ * { display: none !important; }</code>.  Awesome, now the mount is drawn and children are hidden!</p>
     </section>
-    <hr>
-    <section id="mylittlefriend">
-      <h1>Sample 2</h1>
-      <form action="#mylittlefriend" style="margin: 2em; border: 1px solid black;">
-        <label>Say hello to my little friend:
-          <x-checkbox>
-            <input type="checkbox" name="mychk" value="foobar">
-          </x-checkbox>
-        </label>
-        <hr>
-        <button>submit</button>
-      </form>
-      <p>The above is a custom <code>&lt;x-checkbox&gt;</code> element which is specified as:
-<code><pre>&lt;label&gt;Say hello to my little friend:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;x-checkbox&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;input type="checkbox" name="mychk" value="foobar"&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;/x-checkbox&gt;<br>
-&lt;/label&gt;</pre></code>
-      This example is specifically designed to talk about the need for inheritance in custom elements themselves and how you can progressively enhance and take advantage of built in accessibility of native elements.  Without javascript enabled, or without custom elements support, this will still 'work' and display a native checkbox.  The label/input link remains in tact.  There is no aria management going on here and this element extends nothing special (just HTMLElement),
-      it is fully stylable.  The custom element removes its author supplied input's name attribute so that only the projected element in the <dfn>mount node</dfn> is submitted.  You can press the submit button with it checked and uncheck to see that it only submits one value.  Inside the mount it simply contains two native
-      elements and CSS which actually do the work.
-      </p>
-    </section>
+
     <section>
-      <h1>Sample 3</h1>
-      <p>Ok, but some people say "why can't I express that in HTML... why can't I say `there's a boundary here`?"  Well, with a custom element you could, for example:</p>
-      <v-host>
-        <div>
-          <h1>HELLO! THIS SHOULD BE IN A MOUNT NODE!</h1>
-          <div>This is some test content</div>
-        </div>
-      </v-host>
-      <p>
-      The above element with green border is an example of a custom element <code>v-host</code> which simply creates a mount and moves all of the children inside of it!... in the source it looks like this:
-<code><pre>&lt;x-host&gt;<br>
-&nbsp;&nbsp;&lt;h1&gt;HELLO! THIS SHOULD BE IN A MOUNT NODE!&lt;/h1&gt;<br>
-&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
-&lt;/v-host&gt;</pre></code>
-      <p>
-      <p>Once created the DOM looks like this:
-<code><pre>&lt;v-host class="v-mount-host"&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;v-mount id="-cn-9"&gt;&lt;div&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;HELLO! THIS SHOULD BE IN A MOUNT NODE!&lt;/h1&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;div&gt;This is some test content&lt;/div&gt;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&lt;/v-mount&gt;<br>
-&lt;/v-host&gt;</pre></code>
-      </p>
+      <h2>So, we're done right? Wrong: CSS.</h2>
+      <p>If the above stuff was done at the native level, this would be enough to isolate the CSS rendering too - but since we only changed the stuff on top, that's not going to cut it.  While our view of the DOM is pretty well isolated, the DOM itself actually isn't and so CSS remains a problem.  Given how CSS matches selectors this is a <em>really</em> hard thing to solve.  You can't even just say, "begin all of your selectors in CSS with <code>my-customelement v-mount {your actual selector here}</code>" because that rule has very low specificty and it's too prone to leaking.
+
+      <blockquote>But, while we can't say "the stuff inside here shouldn't match any of those selectors by default," could we somehow achieve the same effect?</blockquote>
+
+      <p>The answer again seems to be "kinda, yeah".</p>
+
+      <h3>v-mount default stylesheet</h3>
+      <p>All browsers have a default stylesheet that tells them how to display an element in the first place - the problem is the page has trumped those with lots of rules that came after or are more specific than the default.  But, if we could simply create a v-mount default stylesheet which was more specific, we'd essentially reset and achieve the same effect of not matching.  Happily, there actually kinda is a way to do this.  I say "kinda" because we don't know for sure what the specificity of rules in the outside page are, but we do know that each level of specificity increases with an order of magnitude (within an unspecified number system) - that is: a tag is like "1" - a class is an order of magnitude more specific and an id is an order of magnitude more specific than that.  We also know that people don't write a lot of rules with multiple IDs in them, so any such rule with a few (let's say 3) IDs would trump just about anything on the outside.  In other words, if we could just somehow say something like <code>#a #b #c v-node h1 {...}</code> for each default rule, you could pretty much guarantee that that would be what you'd get.  Luckily, CSS provides us with a way to fake that via <code>:not</code> and attach it right on the v-node itself.  Since we're in control of the v-node, you can pretty much guarantee that it will never be truthful in practice, but I'm going to pick an odd one <code>id="_"</code> and show you what I mean:  <code>v-node:not(#_):not(#_):not(#_) h1 {...}</code>.  So we just generate and insert (just once) a v-node default stylesheet and the v-node is protected from the outside world.  But, isn't this slow?  Wont this make matching slow?  Actually, it shouldn't be too bad - browsers use a bloom filter and such cleverness that evaluating the same triple :not's on the same element should be very low cost.</p>
+
+
+      <h3>v-mount rules</h3>
+      <p>So, now the DOM is in pretty good shape and the mount is protected from the outside world visually by default, but what about the stuff inside it.  We don't really want component authors to have to write all those :not's right?  Well, if you're using a pre-processor, that's actually not too hard, so what I'm going to cheat a little and say 'what if there was an api that did a simple pre-processor step to add it' and we just do some simple checks to make sure that you don't stick a style or link tag inside of it manually.  We might provide a simple method like <code>._scopeCSS(<em>cssText</em>)</code> which did it for you.  As long as your CSS is valid, it is pretty easy to create a frame, create a stylesheet out of your CSS, iterate the rules and copy them over with the not'ing in place.  With these in place, the outer document would be reasonably protected from the inner.</p>
     </section>
-    <hr>
-  <h1>Tests for <code>&lt;v-mount&gt;</code></h1>
-  <table id="tests">
-    <tbody>
-      <tr>
-        <td>document.querySelector("h1").innerHTML ===  "MountNode"</td>
-        <td>Document is a special kind of element, make sure that works...</td>
-      </tr>
-      <tr>
-        <td>document.querySelectorAll("h1").length === 5</td>
-        <td>And that it doesn't find ones in mount.</td>
-      </tr>
-      <tr>
-        <td>document.body.querySelector("h1").innerHTML ===  "MountNode"</td>
-        <td>Other elements should work too...</td>
-      </tr>
-      <tr>
-        <td>document.body.querySelectorAll("h1").length === 5</td>
-        <td>And those shouldn't find ones inside the mount either...</td>
-      </tr>
-      <tr>
-        <td>document.body.querySelector("/--mount/").querySelectorAll("h1").length === 1</td>
-        <td>And queries inside the mount shouldn't find ones outside the mount either... <em>Note that is does find 'projected' elements though, I'm calling this a win because it's much easier to make sure you are only dealing with your own content than the other way round or bi-directionally.</em></td>
-      </tr>
-      <tr>
-        <td>document.querySelector("x-foo").children.length===2</td>
-        <td>x-foo doesn't report the mount in children, tree-walking down should stop...</td>
-      </tr>
-      <tr>
-        <td>document.querySelector("x-foo")._mount</td>
-        <td>x-foo has a ._mount property</td>
-      </tr>
-      <tr>
-        <td>document.body.querySelectorAll("v-node").length === 0</td>
-        <td>We should find none of these....</td>
-      </tr>
-      <tr>
-        <td>document.body.querySelectorAll("/--mount/").length === 3</td>
-        <td>We should find them with the combinator though...</td>
-      </tr>
-      <tr>
-        <td>document.querySelector("x-foo")._mount.querySelector("h1")</td>
-        <td>Searches inside of ._mount should only find ones inside the mount</td>
-      </tr>
-      <tr>
-        <td>document.querySelector("x-foo")._mount.parentElement === null</td>
-        <td>the _mount connection is not linked through parentElement, tree-walking up should stop.</td>
-      </tr>
-      <tr>
-        <td>document.querySelector("x-foo")._mount._hostElement === document.querySelector("x-foo")</td>
-        <td>the _mount connection is upwardly linked through _hostElement</td>
-      </tr>
-    </tbody>
-  </table>
-
-  </section>
-
-  <script>
-    var test, result, testsEl = document.getElementById("tests");
-    for (var row=0; row<tests.tBodies[0].children.length; row++) {
-      result = false;
-      test = tests.tBodies[0].children[row].children[0].innerHTML.replace("&lt;", "<").replace("&gt;", ">");
-      result = eval("try{" + test +";} catch(e){ console.error('I have no idea...', e.stack); }");
-      tests.tBodies[0].children[row].className = (result) ? "pass" : "fail";
-    }
-  </script>
   <body>
 </html>
