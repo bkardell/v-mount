@@ -103,6 +103,14 @@
         <p>So, now the DOM is in pretty good shape and the mount is protected from the outside world visually by default, but what about the stuff inside it.  We don't really want component authors to have to write all those :not's right?  Well, if you're using a pre-processor, that's actually not too hard, so what I'm going to cheat a little and say 'what if there was an api that did a simple pre-processor step to add it'.  Then, actually, it's not so bad...</p>
         <p>Ideally, if we aren't counting on HTML Imports yet, we probably want to ship our CSS down along with the element definition, so why not just add a method to do this for now... We can provide a simple method like <code>._scopeCSS(<em>cssText</em>)</code> which did it for you and do some simple checks and we just do some simple checks to make sure that you don't stick a style or link tag inside of it manually and that nothing was unprefixed.  As long as your CSS is valid, it is pretty easy to create a frame, create a stylesheet out of your CSS, iterate the rules and copy them over with the not'ing in place.  With these things in place, the outer document would be reasonably protected from the inner one too.</p>
       </section>
+
+      <section>
+        <h2>What about Simple HTML?</h2>
+        <p>All of the above is about creating a 'non-element' - while we're faking it using an element that lies about itself and hacks, it's intended to be a non-element.  Some people have indicated that the lack of ability to express this in HTML is a problem, so some people have said that it would appear that a non-element wouldn't be a good solution.</p>
+        <blockquote>But, is there a way that you can reconcile this, so that you can express a boundary in HTML and still somehow retain it's non-element-ness?</blockquote>
+        <h3><span class="checkmark">&#10003;</span> We'd like a way to reason about this declaratively too...</h3>
+        <p>The answer, is yes! All you'd need is an <em>actual</em> element which connects a mount and lifts its contents into it, so I've provided a <code>v-host</code> custom element which is just that: it's implementation is about 2 lines of code.</p>
+      </section>
     </section>
 
     <p>See also <a href="enhancements.html">Part II: Enhancements</a></p>

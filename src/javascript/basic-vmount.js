@@ -11,16 +11,7 @@
             }
             el.id = nextUid();
             return true;
-        },/*
-        find = function(scope, query) {
-            var identified = identify(scope),
-                pre = (scope !== document) ? "#" + scope.id + " " : "";
-            result = scope._querySelector(pre + query);
-            if (identified && scope.removeAttribute) {
-                scope.removeAttribute("id");
-            }
-            return result;
-        },*/
+        },
         findAll = function(scope, query) {
             var identified = identify(scope),
                 pre = (scope !== document) ? "#" + scope.id + " " : "";
