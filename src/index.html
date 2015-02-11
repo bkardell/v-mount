@@ -44,57 +44,70 @@
         color: green;
       }
 
-      section *:not(h2):not(h3):not(a):not(code) {
+      section *:not(h2):not(h3):not(a):not(code):not(h1):not(em):not(strong) {
         margin-left: 2em;
       }
 
-      section h3{
+      section h3 {
         margin-left: -2em;
       }
+
+      .intro { font-style: italic; }
     </style>
   </head>
   <body>
-    <section class="active">
-      <p>I recently described 'the friendly fire problem' in the DOM in a <a href="https://briankardell.wordpress.com/2015/01/14/friendly-fire-the-fog-of-dom/">blog post</a>, sometimes referred to less illustratively as 'the composition problem'.  Shadow DOM as originally spec'ed would have addressed this issue, but it's pretty complicated and now it seems as though it's hung up in committee and likely to be modified or rethought.  As disappointing as this is, on some level it's actually not at all a surprise to me - not just because I follow the lists closely but because solving problems requires experimentation and sometimes only after you've really thought it through and developed something complex to address the issues are you well situated to throw that one out, simplify it and do the real thing.  'The Pilot System' effect was described in the Mythical Man Month way back in the 1960's and is sometimes known as "The First Pancake" or "The First Waffle" theory.  It's not a bad thing. What is a bad thing is that in the meantime, developers are left with few good options and are stuck in a world in which all of those question remain unanswered.  They could use Polymer's Shadow DOM polyfill, but it's heavy and currently intertwined with other things.  It also wants to be a polyfill - that is - act like a native thing.  This worries me since it looks like that native thing will never actually exist in that form and this creates a Cobra Problem (I'll leave that for another post).  In any case, in the meantime, developers are left without many good options to solve these problems.  So, I've been wondering what we can do (anything?) and experimenting with something based on my thoughts in that post.</p>
-    </section>
+    <section class="intro">
+      <p>I recently described 'the friendly fire problem' in the DOM in a <a href="https://briankardell.wordpress.com/2015/01/14/friendly-fire-the-fog-of-dom/">blog post</a>, sometimes referred to less illustratively as 'The Composition Problem'.  Shadow DOM as originally spec'ed would have addressed this issue, but it's pretty complicated and now it seems as though it's hung up in committee and likely to be modified or rethought.  As disappointing as this is, on some level it's actually not at all a surprise to me - not just because I follow the lists closely but because solving problems requires experimentation and sometimes only after you've really thought it through and developed something complex to address the issues are you well situated to throw that one out, simplify it and do the real thing.  <a href="http://en.wikipedia.org/wiki/The_Mythical_Man-Month#The_pilot_system" target="_blank">'The Pilot System' effect</a> was described in the Mythical Man Month way back in the 1960's and is sometimes known as "The First Pancake" or "The First Waffle" theory.  It's not a bad thing - and the good news is that everyone seems to *want* to solve a lot of these problems.</p>
 
-    <section>
-      <h2>Let's start with the basic DOM stuff</h2>
       <p>
-      Could we create some kind of new "thing" - not quite an element, which allowed us to mount a subtree to an element by a means other than parent/child links?  This is, what I argue is the lowest level of thing which would still add value.
-
-      <blockquote>Can we create something in such a way that DOM methods outside that element would answer questions, by default, ignoring the stuff inside, and vice-versa?</blockquote>
-
-      <p>The answer seems to be "kinda, yeah". While we can't create something that isn't an element as far as the browser's internals are concerned, we definitely can lay atop that and have the interface a developer can use just override, lie about itself and act differently.  So let's start there and see how we might define a magical new <code>Mount_Node</code> (note that I'm underscoring the name for forward compatibility - this is experimental). What would we need?
-      </p>
-
-      <h3><span class="checkmark">&#10003;</span> It should only be creatable imperatively</h3>
-      <p>If it isn't an element we don't want it to pretend to be just like everything else, so it can't come down in your HTML (if you're thinking "too bad, that could be handy" just wait, we'll get there).  So, would it be possible to create such a thing?  Could we use the internals of custom elements to create an element which can only be created imperatively?  Not exactly, but pretty close actually.  We can create a static method which allows you to connect a new <code>Mount_Node</code> to a host and, once created, signs it with a secret.  When the element is created, it sets a timeout and on the next tick if it doesn't see the secret there it self-destructs.</p>
-
-      <h3><span class="checkmark">&#10003;</span> querySelector and friends should be scoped</h3>
-      <p>At the most basic level this is pretty easy to do too- you basically wrap the method, do the native thing and then filter depending on whether you are inside a <code>Mount_Node</code> or outside, the other results.  You can do the same with getElementById - it's a bit of a performance hit, but in reality, according to the spec, this is how it really works anyway.  For other things, you can pretty much do the same.</p>
-
-      <h3><span class="checkmark">&#10003;</span> parent and child links should disconnect</h3>
-      <p>Once again, we can simply overwrite - so that a <code>Mount_Node</code>'s parentElement returns null acreate a new property <code>_host</code> (what would have been parentElement) instead.  Likewise, we can hide the <code>host</code>'s native children property and replace it with one that is filtered to exclude the <code>Mount_Node</code> and provide a new <code>._mount</code> property which points to the <code>Mount_Node</code>.</p>
-
-      <h3><span class="checkmark">&#10003;</span> Only the mount should render</h3>
-      <p>This is shaping up nicely except that the browser can't render <em>both</em> children <em>and</em> a mount inside a host.  If something becomes a host you want it to <em>only</em> paint the host.  Note that I say 'paint' because later I'm going to explain that we don't want to <em>destroy</em> a mounts siblings so much as <em>hide</em> them.  Welp, if we make the mount node the first actual child (keep in mind that to the browser it's still a child, you just can't see that) then CSS gives us the general sibling combinator allowing us to say "all siblings of a v-mount", so we can easily have our code inject a single rule stylesheet which does that: <code>v-mount ~ * { display: none !important; }</code>.  Awesome, now the mount is drawn and children are hidden!</p>
+      What <strong>is</strong> a bad thing is that in the meantime, developers are left with few good options and are stuck in a world in which all of those question remain unanswered.  They could use Polymer's Shadow DOM polyfill, but it's heavy and currently kind of intertwined with other things.  It also wants to be a polyfill - that is - act like a native thing which now seems like will never exist in that form.  Our ability to create a <a href="http://en.wikipedia.org/wiki/Cobra_effect" target="_blank">Cobra Effect</a> (I'll leave that for another post) like this without good practices is kind of worrisome to me.  In any case, in the meantime, developers are left without any other good options to solve these problems.  So, I've been wondering:  What we can do?  Can we do <em>anything</em>?  Here are some thoughts...</p>
     </section>
 
     <section>
-      <h2>So, we're done right? Wrong: CSS.</h2>
-      <p>If the above stuff was done at the native level, this would be enough to isolate the CSS rendering too - but since we only changed the stuff on top, that's not going to cut it.  While our view of the DOM is pretty well isolated, the DOM itself actually isn't and so CSS remains a problem.  Given how CSS matches selectors this is a <em>really</em> hard thing to solve.  You can't even just say, "begin all of your selectors in CSS with <code>my-customelement v-mount {your actual selector here}</code>" because that rule has very low specificty and it's too prone to leaking.
+      <h1>Bare Minimums</h1>
+      <p>Let's start with what I think are the bare minimums of isolation and that is "tree isolation" or "selector isolation".  That is, defining a subtree
+      as different enough that the common behavior isn't likely to do harm.</p>
+      <section>
+        <h2>Basic DOM stuff</h2>
+        <p>
+        Could we create some kind of new "thing" - not quite an element, which allowed us to mount a subtree to an element by a means other than parent/child links?  This is, what I argue is the lowest level of thing which would still add value.
 
-      <blockquote>But, while we can't say "the stuff inside here shouldn't match any of those selectors by default," could we somehow achieve the same effect?</blockquote>
+        <blockquote>Can we create something in such a way that DOM methods outside that element would answer questions, by default, ignoring the stuff inside, and vice-versa?</blockquote>
 
-      <p>The answer again seems to be "kinda, yeah".</p>
+        <p>The answer seems to be "kinda, yeah". While we can't create something that isn't an element as far as the browser's internals are concerned, we definitely can lay atop that and have the interface a developer can use just override, lie about itself and act differently.  So let's start there and see how we might define a magical new <code>Mount_Node</code> (note that I'm underscoring the name for forward compatibility - this is experimental). What would we need?
+        </p>
 
-      <h3><span class="checkmark">&#10003;</span> The inside should be protected</h3>
-      <p>All browsers have a default stylesheet that tells them how to display an element in the first place - the problem is the page has trumped those with lots of rules that came after or are more specific than the default.  But, if we could simply create a v-mount default stylesheet which was more specific, we'd essentially reset and achieve the same effect of not matching.  Happily, there actually kinda is a way to do this.  I say "kinda" because we don't know for sure what the specificity of rules in the outside page are, but we do know that each level of specificity increases with an order of magnitude (within an unspecified number system) - that is: a tag is like "1" - a class is an order of magnitude more specific and an id is an order of magnitude more specific than that.  We also know that people don't write a lot of rules with multiple IDs in them, so any such rule with a few (let's say 3) IDs would trump just about anything on the outside.  In other words, if we could just somehow say something like <code>#a #b #c v-node h1 {...}</code> for each default rule, you could pretty much guarantee that that would be what you'd get.  Luckily, CSS provides us with a way to fake that via <code>:not</code> and attach it right on the v-node itself.  Since we're in control of the v-node, you can pretty much guarantee that it will never be truthful in practice, but I'm going to pick an odd one <code>id="_"</code> and show you what I mean:  <code>v-node:not(#_):not(#_):not(#_) h1 {...}</code>.  So we just generate and insert (just once) a v-node default stylesheet and the v-node is protected from the outside world.  But, isn't this slow?  Wont this make matching slow?  Actually, it shouldn't be too bad - browsers use a bloom filter and such cleverness that evaluating the same triple :not's on the same element should be very low cost.</p>
+        <h3><span class="checkmark">&#10003;</span> It should only be creatable imperatively</h3>
+        <p>If it isn't an element we don't want it to pretend to be just like everything else, so it can't come down in your HTML (if you're thinking "too bad, that could be handy" just wait, we'll get there).  So, would it be possible to create such a thing?  Could we use the internals of custom elements to create an element which can only be created imperatively?  Not exactly, but pretty close actually.  We can create a static method which allows you to connect a new <code>Mount_Node</code> to a host and, once created, signs it with a secret.  When the element is created, it sets a timeout and on the next tick if it doesn't see the secret there it self-destructs.</p>
+
+        <h3><span class="checkmark">&#10003;</span> querySelector and friends should be scoped</h3>
+        <p>At the most basic level this is pretty easy to do too- you basically wrap the method, do the native thing and then filter depending on whether you are inside a <code>Mount_Node</code> or outside, the other results.  You can do the same with getElementById - it's a bit of a performance hit, but in reality, according to the spec, this is how it really works anyway.  For other things, you can pretty much do the same.</p>
+
+        <h3><span class="checkmark">&#10003;</span> parent and child links should disconnect</h3>
+        <p>Once again, we can simply overwrite - so that a <code>Mount_Node</code>'s parentElement returns null acreate a new property <code>_host</code> (what would have been parentElement) instead.  Likewise, we can hide the <code>host</code>'s native children property and replace it with one that is filtered to exclude the <code>Mount_Node</code> and provide a new <code>._mount</code> property which points to the <code>Mount_Node</code>.</p>
+
+        <h3><span class="checkmark">&#10003;</span> Only the mount should render</h3>
+        <p>This is shaping up nicely except that the browser can't render <em>both</em> children <em>and</em> a mount inside a host.  If something becomes a host you want it to <em>only</em> paint the host.  Note that I say 'paint' because later I'm going to explain that we don't want to <em>destroy</em> a mounts siblings so much as <em>hide</em> them.  Welp, if we make the mount node the first actual child (keep in mind that to the browser it's still a child, you just can't see that) then CSS gives us the general sibling combinator allowing us to say "all siblings of a v-mount", so we can easily have our code inject a single rule stylesheet which does that: <code>v-mount ~ * { display: none !important; }</code>.  Awesome, now the mount is drawn and children are hidden!</p>
+      </section>
+
+      <section>
+        <h2>What about CSS?</h2>
+        <p>If the above stuff was done at the native level, this alone would be enough to isolate the CSS rendering too - but since we only changed the stuff on top, that's not going to cut it.  While our view of the DOM is pretty well isolated, the DOM itself actually isn't and so CSS remains a problem.  Given how CSS matches selectors this is a <em>really</em> hard thing to solve.  You can't even just say, "begin all of your selectors in CSS with <code>my-customelement v-mount {your actual selector here}</code>" because that rule has very low specificty and it's too prone to leaking.</p>
+
+        <blockquote>But, while we can't say "the stuff inside here shouldn't match any of those selectors by default," could we somehow achieve the same effect?</blockquote>
+
+        <p>The answer again seems to be "kinda, yeah".</p>
+
+        <h3><span class="checkmark">&#10003;</span> The inside should be protected</h3>
+        <p>All browsers have a default stylesheet that tells them how to display an element in the first place - the problem is the page has trumped those with lots of rules that came after or are more specific than the default.  But, if we could simply create a v-mount default stylesheet which was more specific, we'd essentially reset and achieve the same effect of not matching.  Happily, there actually kinda is a way to do this.  I say "kinda" because we don't know for sure what the specificity of rules in the outside page are, but we do know that each level of specificity increases with an order of magnitude (within an unspecified number system) - that is: a tag is worth "1" - a class is an order of magnitude more specific and an id is an order of magnitude more specific than that.  We also know that people don't write a lot of rules with multiple IDs in them, so any such rule with a few (let's say 3) IDs would trump just about anything on the outside.  In other words, if we could just somehow say something like <code>#a #b #c v-node h1 {...}</code> for each default rule, you could pretty much guarantee that that would be what you'd get.  Luckily, CSS provides us with a way to fake that via <code>:not</code> and attach it right on the v-node itself.  Since we're in control of the v-node, you can pretty much guarantee that it will never be truthful in practice, but I'm going to pick an odd one <code>id="_"</code> and show you what I mean:  <code>v-node:not(#_):not(#_):not(#_) h1 {...}</code>.  So we just generate and insert (just once) a v-node default stylesheet and the v-node is protected from the outside world.  But, isn't this slow?  Wont this make matching slow?  Actually, it shouldn't be too bad - browsers use a bloom filter and such cleverness that evaluating the same triple :not's on the same element should be very low cost.</p>
 
 
-      <h3><span class="checkmark">&#10003;</span> The inside should be stylable and the outside protected</h3>
-      <p>So, now the DOM is in pretty good shape and the mount is protected from the outside world visually by default, but what about the stuff inside it.  We don't really want component authors to have to write all those :not's right?  Well, if you're using a pre-processor, that's actually not too hard, so what I'm going to cheat a little and say 'what if there was an api that did a simple pre-processor step to add it' and we just do some simple checks to make sure that you don't stick a style or link tag inside of it manually.  We might provide a simple method like <code>._scopeCSS(<em>cssText</em>)</code> which did it for you.  As long as your CSS is valid, it is pretty easy to create a frame, create a stylesheet out of your CSS, iterate the rules and copy them over with the not'ing in place.  With these in place, the outer document would be reasonably protected from the inner.</p>
+        <h3><span class="checkmark">&#10003;</span> The inside should be stylable and the outside protected</h3>
+        <p>So, now the DOM is in pretty good shape and the mount is protected from the outside world visually by default, but what about the stuff inside it.  We don't really want component authors to have to write all those :not's right?  Well, if you're using a pre-processor, that's actually not too hard, so what I'm going to cheat a little and say 'what if there was an api that did a simple pre-processor step to add it'.  Then, actually, it's not so bad...</p>
+        <p>Ideally, if we aren't counting on HTML Imports yet, we probably want to ship our CSS down along with the element definition, so why not just add a method to do this for now... We can provide a simple method like <code>._scopeCSS(<em>cssText</em>)</code> which did it for you and do some simple checks and we just do some simple checks to make sure that you don't stick a style or link tag inside of it manually and that nothing was unprefixed.  As long as your CSS is valid, it is pretty easy to create a frame, create a stylesheet out of your CSS, iterate the rules and copy them over with the not'ing in place.  With these things in place, the outer document would be reasonably protected from the inner one too.</p>
+      </section>
     </section>
+
+    <p>See also <a href="enhancements.html">Part II: Enhancements</a></p>
   <body>
 </html>
