@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css">
+
+    <style>
+      body { padding: 1em; }
+      h1 { color: blue; }
+      .secret { color: red; }
+      #tests {
+        border-collapse: collapse;
+      }
+      #tests tr {
+        border: 1px solid black;
+      }
+      #tests td {
+        padding: 0.25em;
+      }
+
+      #tests td:nth-child(2) {
+        border-left: 2px solid gray;
+        width: 25%;
+      }
+      pre {
+        border: 1px solid gray;
+        padding: 1em;
+        background-color: #fcfcfc;
+      }
+
+      .pass { background-color: #55FF55; }
+      .fail { background-color: #FF5555; }
+
+      blockquote {
+        border: none;
+        font-family: fantasy;
+        font-style: italic;
+      }
+
+      .checkmark {
+        color: green;
+      }
+
+      section *:not(h2):not(h3):not(a):not(code):not(h1):not(em):not(strong) {
+        margin-left: 2em;
+      }
+
+      section h3 {
+        margin-left: -2em;
+      }
+
+      .intro { font-style: italic; }
+    </style>
+  </head>
+  <body>
+    <section class="intro">
+      <p>Part of a larger effort in thinking about ways to get benefits now that are <a href="https://github.com/w3c/webcomponents/wiki/Shadow-DOM:-Contentious-Bits">currently specified in Shadow DOM, but contentious</a> and held up.</p>
+    </section>
+
+    <section>
+      <h1>The Pandora Box</h1>
+      <p>CSS works really well if you can follow good patterns and have nice rich markup. It lets you define broad rules and inherit and override selectively, and if used well it cleanly decouples a separation of concerns -- it's pretty elegant actually.</p>
+
+      <p>On the other hand, in the real world, things are often not that simple: Until pretty recently, HTML wasn't especially expressive natively, so we worked around it - many times on our own by adding classes like "article" - but there wasn't a standard.  Likewise, our ideas about the patterns we should follow continues to change as we gain new powers or spend more time with the technology.  Of course, there are a <em>vast</em> number of cases where you'll just go and upgrade your philosophy and be the better for it, but there are a number of times when this just isn't an option.  I recently described <a href="https://briankardell.wordpress.com/2015/01/14/friendly-fire-the-fog-of-dom/">this in a recent post as the "friendly fire" problem</a> - when you have numerous teams operating on different time schedules and budgets across many code bases that attempt to mash together into various forms.  When it comes to these sorts of cases, quality and philosophy are inevitably mixed and not entirely in the control of any one team.  In these sorts of cases, CSS selectors are kind of like live hand-grenades, it's just way too easy to do damage you didn't intend to do because it requires a level of coordination of approach which is, for business reasons, highly impractical.  And so you try really hard to analyze the problem, get the right select/cascade/descend/inherit/specificity, pull the pin, lob it into the pages and... hope.  Frequently, all hell breaks loose.  The more you mix it up, the harder it gets to reason about and the more our stylesheets explode in complexity.  You've opened the proverbial Pandora's Box.</p>
+
+      <p>What you'd really like to do in these cases is isolate the various pieces so that the default thing is to do no harm, but the platform doesn't provide you an easy way to do that.... but can we fake it with what we have?</p>
+
+      <h2>Thinking about how CSS works</h2>
+      <p><strong>user-agent stylesheets</strong>: All browsers come with a default, or "user-agent" stylesheet.  This is the thing that tells them how to display an element in the first place, and it does so with the same kinds of CSS rules that you and I write every day.  Without it, you'd be able to see the contents of those <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> tags, your <code>&lt;h1&gt;</code> would look just like any other piece of text, and so on.
+
+      <p><strong>specificity</strong>: The CSS runtime is a rules engine - all of the rules are loaded in order and maintain a stable sort based-on a concept called "specificity".  That is, each rule gets a weighted "score" according to the selector it is based on.  A "*" in the selector is worth 0 "points", a tag is worth 1, a class is worth an order of magnitude more (it's not specifically 10 based, but for illustration you can assume 10 points), an id is worth 100.  So the reason author CSS trumps the user-agent stylesheets is simply the user-agent stylesheet is very low specificity and it came first - authors will always be either more specific or have come later.</p>
+
+
+      <p>And this is where things get sticky in situations like the ones described above.  If you've got an independently developed component, neither side can really know what they're likely to inherit, what to override or how to do it (because specificity).  Reasoning about this is <em>really hard</em> - many big companies pr products have stylesheets that are many thousands of rules, and frequently not just one.</p>
+
+      <h2>Keep a lid on it...</h2>
+      <p>At some level though, you could imagine that what you really want to do is identify a container as a "pandora-box" and have it do kinda what the browser does with a fresh page by default.  You'd like to say "Give me a clean slate (a user-agent-like sheet for this sort of container) and let me automatically trump the page within this container, by default, just like you trump the user agent... Likewise, keep my rules inside this Padora's Box by default".</p>
+
+      <p>Well, to some extent, we can kind of do this with a not too hard specificity strategy that removes the most of the hard-core coordination concerns. Imagine that I just had a copy of the user-agent stylesheet in which the rules had an artifically insanely high default specificity.  Well, we can do that too because the <code>:not()</code> pseudo-class counts the simple selector inside for its specificity.  So, if we created an attribute called, for example, <code>pandora-box</code> and then picked an id which would be incredibly unlikely to exist in the while (say <code>#-_-</code> because it's also short and shows my 'no comment' face). Then, it would, using CSS's own theory, provide a clean slate within the box and as such, it would work everywhere today.  So we'd find up with a single "pandora-box stylesheet" with rules like <code>[style-mount] h1:not(#-_-):not(#-_-):not(#-_-) { <em>...</em> }</code> which has a specificity of 3 ids, 1 attribute and 1 tag (311 in base-10), enough to trump virtually any sane stylesheet's most ambitious selector.  Then, all you need is a way to shove the components rules into the box and shut the lid.  Essentially, it's the same pattern and you have essentially the same model as the page has with user-agent sheets!</p>
+
+      <p>So here's a quick test <a href="https://github.com/bkardell/v-mount/blob/gh-pages/src/javascript/style-mount.js">style-mount.js</a> which does just that.  Including it will inject a "pandora-box stylesheet" (just once) and give you a method <code>CSS._specifyContainer(<em>containerElement</em>)</code> which will
+      shove any <code>&lt;style&gt;</code> tags within it to a more specific ruleset.  It has a couple of other methods too but they all are just alternate forms of this for a trying out a few ways I'm slicing up the problem - one that allows me to hoist a string of arbitrary cssText, another that I'm playing with in a larger custom element pattern.</p>
+
+      <h2>What about performance?!</h2>
+      <p>The injection of rules happens just once, I dont think that is likely a big perf problem.  Besides the pandora-box stylesheet, you have exactly the same number of rules (your components rules are replaced, not duplicated) and because it's easier to reason about you should be able to have generally less crazy sheets.  At least, that's what I hope.  Only time and use will really tell.  If you're worried about the complexity of the selectors slowing things down dramatically, I doubt that's much of a problem either - browsers use a bloom filter and such cleverness that evaluating the pandora sheet should have not much effect and the triple :not's are placed on the subject element of the selector, so there shouldn't be much computational difference between something no one would have trouble writing like <code>[pandora-box] .foo</code> and the rule it rewrites to <code>[pandora-box] .foo:not(-_-):not(-_-):not(-_-)</code>, it never walks anywhere.</p>
+
+
+      <h2>What about theming?!</h2>
+      <p>This seems to be one of the great debates - clearly there *are* certain kinds of advice you want an outer page to provide to the stuff in these various pandora boxes - things like "the background of this calendar component should be blue".  I have more specific thoughts/answers to that, but it's for another post.  Suffice it to say that if you really really wanted to pierce through from the outside, you'd just have to make those rules _really_ specific - which you could use the same API above to manage, or just add another :not() - the key is that it has the right <em>default</em> behaviors.</p>
+    </section>
+  <body>
+</html>

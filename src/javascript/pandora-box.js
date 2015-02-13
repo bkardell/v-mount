@@ -5,10 +5,10 @@
         nextUid = function() {
             return "-stylemount-" + (++lastUid);
         },
-        specifierSelector = "[style-mount]:not(#-_-):not(#-_-):not(#-_-) ";
+        boost = ":not(#-_-):not(#-_-):not(#-_-)";
 
     /* Boost and inject the CSS provided */
-    window.CSS._mountCSS = function (cssText) {
+    window.CSS._contain = function (cssText) {
         var styleEl = document.createElement("style"), index = -1, q = [];
         styleEl.title = nextUid();
         styleEl.disabled = true;
@@ -22,7 +22,7 @@
             var buff = [];
             if (rule.selectorText) {
                 rule.selectorText.split(",").forEach(function (selector) {
-                    buff.push(specifierSelector + selector);
+                    buff.push("[pandora-box] " + selector + ":not(#-_-):not(#-_-):not(#-_-)");
                 });
                 rule.selectorText = buff.join(",");
             }
@@ -34,26 +34,26 @@
     };
 
     /* Takes a markup, fragment or element, mounts <style> tags contained therein and removes them and returns the markup remaining (also mods by ref) */
-    window.CSS._parseAndMountCSS = function (markupOrFragment) {
+    window.CSS._parseAndContain = function (markupOrFragment) {
         var temp = markupOrFragment;
         if (typeof markupOrFragment === "string") {
             temp = document.createElement("div");
             temp.innerHTML = markupOrFragment;
         }
         Array.prototype.slice.call(temp.querySelectorAll("style")).forEach(function (styleEl) {
-            window.CSS._mountCSS(styleEl.innerHTML);
+            window.CSS._contain(styleEl.innerHTML);
             styleEl.parentElement.removeChild(styleEl);
         });
         return temp.innerHTML;
     };
 
     window.CSS._specifyContainer = function (containerEl) {
-        containerEl.setAttribute("style-mount", true);
+        containerEl.setAttribute("pandora-box", true);
         window.CSS._parseAndMountCSS(containerEl);
     };
 
     // we could use methods here for this, but this should be faster & we can be sure it happens just once...
     var isolator = document.createElement("style");
-    isolator.innerHTML = resets.replace(/`/g, specifierSelector);
+    isolator.innerHTML = resets.replace(/`/g, "[pandora-box]" + boost + " ");
     document.head.appendChild(isolator);
 }());
