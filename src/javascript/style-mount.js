@@ -47,6 +47,11 @@
         return temp.innerHTML;
     };
 
+    window.CSS._specifyContainer = function (containerEl) {
+        containerEl.setAttribute("style-mount", true);
+        window.CSS._parseAndMountCSS(containerEl);
+    };
+
     // we could use methods here for this, but this should be faster & we can be sure it happens just once...
     var isolator = document.createElement("style");
     isolator.innerHTML = resets.replace(/`/g, specifierSelector);
