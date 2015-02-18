@@ -35,8 +35,7 @@
             }
             q.push(rule.cssText);
         });
-        styleEl.parentElement.insertBefore(makeStyleSheet(q.join("\n")), styleEl);
-        styleEl.parentElement.removeChild(styleEl);
+        styleEl.parentElement.replaceChild(makeStyleSheet(q.join("\n")), styleEl);
     };
 
     /* Takes a markup, fragment or element, mounts <style> tags contained therein and removes them and returns the markup remaining (also mods by ref) */
