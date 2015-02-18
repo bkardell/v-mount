@@ -8,9 +8,7 @@
         boost = ":not(#-_-):not(#-_-):not(#-_-)",
         makeStyleSheet = function (cssText) {
             var styleEl = document.createElement("style"), index = -1, q = [];
-            styleEl.title = nextUid();
-            // styleEl.disabled = true;
-            styleEl.type = 'text/css';
+            styleEl.id = styleEl.id || nextUid();
             styleEl.appendChild(document.createTextNode(cssText));
             return styleEl;
         };
@@ -23,7 +21,7 @@
         document.head.appendChild(styleEl);
         Array.prototype.slice.call(document.styleSheets).some(function (item) {
             index++;
-            return item.title === styleEl.title;
+            return item.id === styleEl.id;
         });
         Array.prototype.slice.call(document.styleSheets[index].cssRules).forEach(function (rule) {
             var buff = [];
