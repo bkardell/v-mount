@@ -14,7 +14,8 @@
         var styleEl = document.createElement("style"), index = -1, q = [];
         styleEl.title = nextUid();
         styleEl.disabled = true;
-        styleEl.innerHTML = cssText;
+        styleEl.type = 'text/css';
+        styleEl.appendChild(document.createTextNode(cssText));
         document.head.appendChild(styleEl);
         Array.prototype.slice.call(document.styleSheets).some(function (item) {
             index++;
@@ -63,6 +64,6 @@
 
     // we could use methods here for this, but this should be faster & we can be sure it happens just once...
     var isolator = document.createElement("style");
-    isolator.innerHTML = resets.replace(/`/g, "[pandora-box]" + boost + " ");
+    isolator.appendChild(document.createTextNode(resets.replace(/`/g, "[pandora-box]" + boost + " "));
     document.head.appendChild(isolator);
 }());
