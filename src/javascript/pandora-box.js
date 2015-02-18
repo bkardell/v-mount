@@ -9,7 +9,7 @@
         makeStyleSheet = function (cssText) {
             var styleEl = document.createElement("style"), index = -1, q = [];
             styleEl.title = nextUid();
-            styleEl.disabled = true;
+            // styleEl.disabled = true;
             styleEl.type = 'text/css';
             styleEl.appendChild(document.createTextNode(cssText));
             return styleEl;
