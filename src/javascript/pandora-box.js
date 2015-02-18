@@ -19,7 +19,7 @@
     
     /* Boost and inject the CSS provided */
     window.CSS._contain = function (cssText) {
-        var styleEl = makeStyleSheet(cssText), index = -1, q = [];
+        var styleEl = makeStyleSheet(cssText), index = -1, q = ["\n"];
         document.head.appendChild(styleEl);
         Array.prototype.slice.call(document.styleSheets).some(function (item) {
             index++;
