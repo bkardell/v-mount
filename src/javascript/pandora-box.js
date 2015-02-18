@@ -49,7 +49,7 @@
 
     window.CSS._specifyContainer = function (containerEl) {
         containerEl.setAttribute("pandora-box", true);
-        window.CSS._parseAndMountCSS(containerEl);
+        window.CSS._parseAndContain(containerEl);
     };
 
     // we could use methods here for this, but this should be faster & we can be sure it happens just once...
