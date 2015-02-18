@@ -35,7 +35,7 @@
 
     /* Takes a markup, fragment or element, mounts <style> tags contained therein and removes them and returns the markup remaining (also mods by ref) */
     window.CSS._parseAndContain = function (markupOrFragment) {
-        var temp = markupOrFragment;
+        var temp = markupOrFragment, theme;
         if (typeof markupOrFragment === "string") {
             temp = document.createElement("div");
             temp.innerHTML = markupOrFragment;
@@ -44,6 +44,11 @@
             window.CSS._contain(styleEl.innerHTML);
             styleEl.parentElement.removeChild(styleEl);
         });
+        if (typeof markupOrFragment !== "string") {
+            markupOrFragment.id = markupOrFragment.id || nextUid();
+            theme = document.querySelector("style[type='text/theme-" + markupOrFragment.id + "']");
+            window.CSS.contain(theme.innerHTML);
+        }
         return temp.innerHTML;
     };
 
