@@ -54,7 +54,7 @@
             markupOrFragment.id = markupOrFragment.id || nextUid();
             theme = document.querySelector("style[type='text/theme-" + markupOrFragment.id + "']");
             if (theme) {
-                window.CSS._contain(theme.innerHTML);
+                window.CSS._contain(theme.innerText);
             }
         }
         return temp.innerHTML;
