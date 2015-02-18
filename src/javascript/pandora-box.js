@@ -18,7 +18,7 @@
             index++;
             return item.title === styleEl.title;
         });
-        Array.prototype.slice.call(document.styleSheets[index].rules).forEach(function (rule) {
+        Array.prototype.slice.call(document.styleSheets[index].cssRules).forEach(function (rule) {
             var buff = [];
             if (rule.selectorText) {
                 rule.selectorText.split(",").forEach(function (selector) {
@@ -47,7 +47,9 @@
         if (typeof markupOrFragment !== "string") {
             markupOrFragment.id = markupOrFragment.id || nextUid();
             theme = document.querySelector("style[type='text/theme-" + markupOrFragment.id + "']");
-            window.CSS._contain(theme.innerHTML);
+            if (theme) {
+                window.CSS._contain(theme.innerHTML);
+            }
         }
         return temp.innerHTML;
     };
