@@ -47,7 +47,7 @@
         if (typeof markupOrFragment !== "string") {
             markupOrFragment.id = markupOrFragment.id || nextUid();
             theme = document.querySelector("style[type='text/theme-" + markupOrFragment.id + "']");
-            window.CSS.contain(theme.innerHTML);
+            window.CSS._contain(theme.innerHTML);
         }
         return temp.innerHTML;
     };
