@@ -66,9 +66,7 @@
 
     document.head.appendChild(
         makeStyleSheet(
-            document.createTextNode(
-                resets.replace(/`/g, "[pandora-box]" + boost + " ")
-            )
+            resets.replace(/`/g, "[pandora-box]" + boost + " ")
         )
     );
 }());
