@@ -5,17 +5,21 @@
         nextUid = function() {
             return "-pandor-box-" + (++lastUid);
         },
-        boost = ":not(#-_-):not(#-_-):not(#-_-)";
+        boost = ":not(#-_-):not(#-_-):not(#-_-)",
+        makeStyleSheet = function (cssText) {
+            var styleEl = document.createElement("style"), index = -1, q = [];
+            styleEl.title = nextUid();
+            styleEl.disabled = true;
+            styleEl.type = 'text/css';
+            styleEl.appendChild(document.createTextNode(cssText));
+            return styleEl;
+        };
         
     window.CSS = window.CSS || {};
-
+    
     /* Boost and inject the CSS provided */
     window.CSS._contain = function (cssText) {
-        var styleEl = document.createElement("style"), index = -1, q = [];
-        styleEl.title = nextUid();
-        styleEl.disabled = true;
-        styleEl.type = 'text/css';
-        styleEl.appendChild(document.createTextNode(cssText));
+        var styleEl = makeStyleSheet(cssTxt), index = -1, q = [];
         document.head.appendChild(styleEl);
         Array.prototype.slice.call(document.styleSheets).some(function (item) {
             index++;
@@ -31,9 +35,7 @@
             }
             q.push(rule.cssText);
         });
-        var temp = document.createElement("style");
-        temp.innerHTML = q.join("\n");
-        styleEl.parentElement.replaceChild(temp, styleEl);
+        styleEl.parentElement.replaceChild(makeStyleSheet(q.join("\n")), styleEl);
     };
 
     /* Takes a markup, fragment or element, mounts <style> tags contained therein and removes them and returns the markup remaining (also mods by ref) */
@@ -62,8 +64,11 @@
         window.CSS._parseAndContain(containerEl);
     };
 
-    // we could use methods here for this, but this should be faster & we can be sure it happens just once...
-    var isolator = document.createElement("style");
-    isolator.appendChild(document.createTextNode(resets.replace(/`/g, "[pandora-box]" + boost + " ")));
-    document.head.appendChild(isolator);
+    document.head.appendChild(
+        makeStyleSheet(
+            document.createTextNode(
+                resets.replace(/`/g, "[pandora-box]" + boost + " ")
+            )
+        )
+    );
 }());
