@@ -6,6 +6,8 @@
             return "-stylemount-" + (++lastUid);
         },
         boost = ":not(#-_-):not(#-_-):not(#-_-)";
+        
+    window.CSS = window.CSS || {};
 
     /* Boost and inject the CSS provided */
     window.CSS._contain = function (cssText) {
