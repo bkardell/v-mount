@@ -29,9 +29,10 @@
                 rule.selectorText.split(",").forEach(function (selector) {
                     buff.push("[pandora-box] " + selector + ":not(#-_-):not(#-_-):not(#-_-)");
                 });
-                rule.selectorText = buff.join(",");
+                q.push(rule.cssText.replace(rule.selectorText), buff.join(","));
+            } else {
+                q.push(rule.cssText);
             }
-            q.push(rule.cssText);
         });
         styleEl.parentElement.replaceChild(makeStyleSheet(q.join("\n")), styleEl);
     };
