@@ -27,7 +27,11 @@
             var buff = [];
             if (rule.selectorText) {
                 rule.selectorText.split(",").forEach(function (selector) {
-                    buff.push("[pandora-box] " + selector + ":not(#-_-):not(#-_-):not(#-_-)");
+                    var re = /::[a-z]*$/, b = selector + boost, pseudoEl = selector.match(re);
+                    if (pseudoEl) {
+                        b = selector.replace(re, boost + pseudoEl);
+                    }
+                    buff.push("[pandora-box] " + b);
                 });
                 q.push(rule.cssText.replace(rule.selectorText, buff.join(",")));
             } else {
